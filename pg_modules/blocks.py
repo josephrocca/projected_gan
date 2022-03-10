@@ -33,13 +33,16 @@ def NormLayer(c, mode='batch'):
 
 ### Activations
 
+@torch.jit.script
+def helper_to_avoid_onnx_error(x): # Explanation: https://github.com/Microsoft/onnxruntime/issues/679#issuecomment-476406912
+    nc = x.size(1)
+    nc = int(nc/2)
+    return x[:, :nc] * torch.sigmoid(x[:, nc:])
 
 class GLU(nn.Module):
     def forward(self, x):
-        nc = x.size(1)
         # assert nc % 2 == 0, 'channels dont divide 2!'
-        nc = int(nc/2)
-        return x[:, :nc] * torch.sigmoid(x[:, nc:])
+        return helper_to_avoid_onnx_error(x)
 
 
 class Swish(nn.Module):
